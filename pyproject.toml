@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cc-token-saver-mcp"
+version = "1.0.0"
+description = "MCP server that delegates simple tasks to a local LLM to save Claude Code tokens"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+dependencies = [
+    "fastmcp",
+    "openai",
+    "python-dotenv",
+]
+
+[project.scripts]
+cc-token-saver-mcp = "cc_token_saver_mcp.server:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["cc_token_saver_mcp*"]

@@ -1,0 +1,5 @@
+cc-token-saver-mcp (1.0.0-1) UNRELEASED; urgency=low
+
+  * Initial Debian packaging
+
+ -- Vítězslav Dvořák <info@vitexsoftware.cz>  Thu, 25 Jun 2026 21:37:01 +0200
