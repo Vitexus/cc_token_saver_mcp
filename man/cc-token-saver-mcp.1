@@ -1,0 +1,93 @@
+.TH CC\-TOKEN\-SAVER\-MCP 1 "2026-06-25" "1.0.0" "CC Token Saver MCP"
+.SH NAME
+cc\-token\-saver\-mcp \- MCP server that delegates simple tasks to a local LLM
+.SH SYNOPSIS
+.B cc\-token\-saver\-mcp
+.SH DESCRIPTION
+.B cc\-token\-saver\-mcp
+starts an MCP (Model Context Protocol) server that exposes a locally running
+LLM as tools for Claude Code to use.
+By routing simple, well-defined subtasks to the local LLM, it reduces the
+number of tokens consumed by Claude Code on repetitive or low-complexity
+operations.
+.PP
+The server reads its configuration from a
+.I .env
+file in the working directory, or from environment variables directly.
+.SH ENVIRONMENT
+.TP
+.B OPENAI_API_KEY
+API key sent to the local LLM endpoint (default:
+.IR none ).
+.TP
+.B OPENAI_BASE_URL
+Base URL of the OpenAI-compatible local LLM API
+(default:
+.IR http://localhost:1234/v1 ).
+.TP
+.B LOCAL_MODEL_NAME
+Model name to request from the local endpoint
+(default:
+.IR qwen2.5-7b-instruct ).
+.TP
+.B LOCAL_LLM_TEMPERATURE
+Sampling temperature for generation (default:
+.IR 0.7 ).
+.TP
+.B LOCAL_LLM_MAX_TOKENS
+Maximum tokens per response; \-1 means no limit (default:
+.IR -1 ).
+.SH FILES
+.TP
+.I .env
+Optional dotenv file loaded from the working directory at startup.
+.SH TOOLS EXPOSED
+.TP
+.B query_local_llm
+Send a prompt to the local LLM.
+Accepts an optional system message, temperature override, and max-tokens
+override.
+.TP
+.B query_local_llm_with_context
+Send a prompt together with additional context (e.g. a code snippet) to
+the local LLM.
+Supports built-in system-message presets for
+.IR code_review ,
+.IR documentation ,
+.IR refactor ,
+and
+.IR general .
+.SH EXAMPLES
+Start the server with default settings (requires a local LLM at port 1234):
+.PP
+.RS 4
+.EX
+cc\-token\-saver\-mcp
+.EE
+.RE
+.PP
+Override the model and endpoint via environment:
+.PP
+.RS 4
+.EX
+OPENAI_BASE_URL=http://localhost:8080/v1 LOCAL_MODEL_NAME=llama3 cc\-token\-saver\-mcp
+.EE
+.RE
+.PP
+Typical Claude Code MCP configuration in
+.IR ~/.claude.json :
+.PP
+.RS 4
+.EX
+"mcpServers": {
+  "cc-token-saver": {
+    "type": "stdio",
+    "command": "cc-token-saver-mcp"
+  }
+}
+.EE
+.RE
+.SH SEE ALSO
+.BR python3 (1)
+.SH AUTHOR
+Vítězslav Dvořák <info@vitexsoftware.cz>

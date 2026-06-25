@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="console-application">
+  <id>cz.vitexsoftware.cc-token-saver-mcp</id>
+  <metadata_license>MIT</metadata_license>
+  <project_license>MIT</project_license>
+  <name>CC Token Saver MCP</name>
+  <summary>MCP server that delegates simple tasks to a local LLM to save Claude Code tokens</summary>
+  <description>
+    <p>
+      CC Token Saver MCP is a Model Context Protocol server that exposes a locally
+      running LLM as tools for Claude Code to use. By routing simple, well-defined
+      subtasks to the local LLM, it reduces the number of tokens consumed by Claude
+      Code on repetitive or low-complexity operations.
+    </p>
+    <p>Tasks the local LLM can handle include:</p>
+    <ul>
+      <li>Code snippet generation</li>
+      <li>Simple refactoring tasks</li>
+      <li>Documentation writing</li>
+      <li>Code reviews</li>
+      <li>Basic question and answer</li>
+    </ul>
+    <p>
+      The server connects to any OpenAI-compatible API endpoint, making it compatible
+      with local inference servers such as LM Studio, Ollama, or llama.cpp.
+      Configuration is done via environment variables or a <code>.env</code> file.
+    </p>
+  </description>
+  <provides>
+    <binary>cc-token-saver-mcp</binary>
+  </provides>
+  <url type="homepage">https://github.com/Vitexus/cc_token_saver_mcp</url>
+  <url type="bugtracker">https://github.com/Vitexus/cc_token_saver_mcp/issues</url>
+  <developer id="cz.vitexsoftware">
+    <name>Vítězslav Dvořák</name>
+  </developer>
+  <content_rating type="oars-1.1"/>
+  <releases>
+    <release version="1.0.0" date="2026-06-25"/>
+  </releases>
+</component>
