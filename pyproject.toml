@@ -21,3 +21,8 @@ cc-token-saver-mcp = "cc_token_saver_mcp.server:main"
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["cc_token_saver_mcp*"]
+
+[tool.pytest.ini_options]
+markers = [
+    "integration: tests that require a running local LLM (localhost:11434)",
+]
