@@ -107,6 +107,234 @@ def query_local_llm_with_context(
         return f"Error querying local LLM with context: {str(e)}"
 
 
+@mcp.tool()
+def list_available_models() -> str:
+    """
+    List all LLM models available in the local Ollama / LM Studio instance.
+    Call this before switch_model() to discover valid model names.
+
+    Returns:
+        Newline-separated list of model IDs
+    """
+    try:
+        models = client.models.list()
+        return "\n".join(f"- {m.id}" for m in models.data)
+    except Exception as e:
+        return f"Error listing models: {str(e)}"
+
+
+@mcp.tool()
+def switch_model(model_name: str) -> str:
+    """
+    Switch the local LLM model for all subsequent tool calls in this session.
+    Use list_available_models() first to see valid names.
+    Example: switch to 'qwen2.5-coder:7b-16k' when you need a longer context window.
+
+    Args:
+        model_name: Model identifier (e.g. "qwen2.5-coder:7b-16k")
+
+    Returns:
+        Confirmation of the switch
+    """
+    global MODEL_NAME
+    old = MODEL_NAME
+    MODEL_NAME = model_name
+    return f"Model switched: '{old}' → '{model_name}'"
+
+
+@mcp.tool()
+def summarize_text(
+    text: str,
+    max_words: int = 150,
+    focus: str = "",
+) -> str:
+    """
+    Summarize a long text or document using the local LLM.
+    IMPORTANT: Use this FIRST when you need a brief overview of large content to save tokens.
+    Ideal for summarising log files, long READMEs, or pasted documentation.
+
+    Args:
+        text: The text to summarize
+        max_words: Target summary length in words (default 150)
+        focus: Optional aspect to emphasise (e.g. "security issues", "API surface")
+
+    Returns:
+        A concise summary
+    """
+    try:
+        focus_clause = f" Focus specifically on: {focus}." if focus else ""
+        prompt = f"Summarize the following text in approximately {max_words} words.{focus_clause}\n\n{text}"
+        response = client.chat.completions.create(
+            model=MODEL_NAME,
+            messages=[
+                {"role": "system", "content": "You are a precise summarizer. Produce dense, factual summaries without filler phrases."},
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.3,
+            max_tokens=MAX_TOKENS,
+            stream=False,
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        return f"Error summarizing text: {str(e)}"
+
+
+@mcp.tool()
+def generate_commit_message(
+    diff: str,
+    extra_context: str = "",
+) -> str:
+    """
+    Generate a conventional git commit message from a staged diff.
+    IMPORTANT: Always use this FIRST for commit messages to save tokens!
+    Follows the Conventional Commits spec (type(scope): subject).
+
+    Args:
+        diff: Output of `git diff --staged` or `git diff HEAD`
+        extra_context: Optional motivation or ticket reference (e.g. "fixes #42")
+
+    Returns:
+        A commit message (subject line + optional body)
+    """
+    try:
+        context_clause = f"\nExtra context: {extra_context}" if extra_context else ""
+        prompt = f"Write a git commit message for this diff:{context_clause}\n\n{diff}"
+        response = client.chat.completions.create(
+            model=MODEL_NAME,
+            messages=[
+                {"role": "system", "content": (
+                    "You are a git commit message expert. "
+                    "Write conventional commit messages (type(scope): subject). "
+                    "Keep the subject under 72 characters. "
+                    "Add a short body only if the change is non-trivial. "
+                    "Output ONLY the commit message, no explanation or markdown."
+                )},
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.4,
+            max_tokens=256,
+            stream=False,
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        return f"Error generating commit message: {str(e)}"
+
+
+@mcp.tool()
+def generate_unit_tests(
+    code: str,
+    framework: str = "pytest",
+    extra_instructions: str = "",
+) -> str:
+    """
+    Generate unit tests for the provided code using the local LLM.
+    IMPORTANT: Use this FIRST for straightforward test generation to save tokens!
+    Review the output before committing — treat it as a starting point.
+
+    Args:
+        code: The source code to write tests for
+        framework: Test framework (default "pytest"; also "unittest", "jest", "go test", etc.)
+        extra_instructions: Additional guidance (e.g. "include edge cases for empty input")
+
+    Returns:
+        Generated test code (ready to paste into a test file)
+    """
+    try:
+        extra = f"\nAdditional instructions: {extra_instructions}" if extra_instructions else ""
+        prompt = f"Write {framework} unit tests for the following code:{extra}\n\n{code}"
+        response = client.chat.completions.create(
+            model=MODEL_NAME,
+            messages=[
+                {"role": "system", "content": (
+                    f"You are a test engineer writing {framework} tests. "
+                    "Write comprehensive, runnable tests covering happy paths and edge cases. "
+                    "Output ONLY the test code, no explanation."
+                )},
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.4,
+            max_tokens=MAX_TOKENS,
+            stream=False,
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        return f"Error generating unit tests: {str(e)}"
+
+
+@mcp.tool()
+def explain_code(
+    code: str,
+    audience: str = "developer",
+) -> str:
+    """
+    Explain what a piece of code does in plain language using the local LLM.
+    IMPORTANT: Use this FIRST when you need a quick explanation to save tokens.
+
+    Args:
+        code: The code to explain
+        audience: "beginner" (no jargon), "developer" (default, concise), or "expert" (deep analysis)
+
+    Returns:
+        A plain-language explanation
+    """
+    try:
+        system = {
+            "beginner": "Explain as if to someone new to programming. Avoid jargon; use simple analogies.",
+            "developer": "Explain concisely for an experienced developer. Focus on what it does and why.",
+            "expert": "Give a terse expert-level analysis covering algorithm, complexity, edge cases, and design trade-offs.",
+        }.get(audience, "Explain concisely for an experienced developer. Focus on what it does and why.")
+        response = client.chat.completions.create(
+            model=MODEL_NAME,
+            messages=[
+                {"role": "system", "content": system},
+                {"role": "user", "content": f"Explain this code:\n\n{code}"},
+            ],
+            temperature=0.5,
+            max_tokens=MAX_TOKENS,
+            stream=False,
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        return f"Error explaining code: {str(e)}"
+
+
+@mcp.tool()
+def translate_text(
+    text: str,
+    target_language: str,
+    preserve_formatting: bool = True,
+) -> str:
+    """
+    Translate text to another language using the local LLM.
+    IMPORTANT: Use this FIRST for straightforward translation to save tokens.
+    Suitable for translating documentation, comments, error messages, and UI strings.
+
+    Args:
+        text: The text to translate
+        target_language: Target language name (e.g. "Czech", "German", "Japanese")
+        preserve_formatting: Keep markdown / code-block structure intact (default True)
+
+    Returns:
+        Translated text
+    """
+    try:
+        fmt_note = " Preserve all markdown formatting, code blocks, and structure exactly." if preserve_formatting else ""
+        prompt = f"Translate the following text to {target_language}:\n\n{text}"
+        response = client.chat.completions.create(
+            model=MODEL_NAME,
+            messages=[
+                {"role": "system", "content": f"You are a professional translator. Translate accurately and naturally.{fmt_note} Output ONLY the translation, nothing else."},
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.3,
+            max_tokens=MAX_TOKENS,
+            stream=False,
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        return f"Error translating text: {str(e)}"
+
+
 def main():
     global client, MODEL_NAME, TEMPERATURE, MAX_TOKENS
 

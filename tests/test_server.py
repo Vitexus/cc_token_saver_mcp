@@ -160,16 +160,216 @@ class TestQueryLocalLlmWithContext:
 
 
 # ---------------------------------------------------------------------------
+# list_available_models — unit tests
+# ---------------------------------------------------------------------------
+
+class TestListAvailableModels:
+
+    def test_returns_model_list(self, mock_client):
+        m1, m2 = MagicMock(), MagicMock()
+        m1.id = "model-a"
+        m2.id = "model-b"
+        mock_client.models.list.return_value.data = [m1, m2]
+        result = srv.list_available_models()
+        assert "model-a" in result
+        assert "model-b" in result
+
+    def test_exception_returns_error_string(self, mock_client):
+        mock_client.models.list.side_effect = Exception("unreachable")
+        result = srv.list_available_models()
+        assert result.startswith("Error listing models:")
+
+
+# ---------------------------------------------------------------------------
+# switch_model — unit tests
+# ---------------------------------------------------------------------------
+
+class TestSwitchModel:
+
+    def test_switches_global_model_name(self, mock_client):
+        srv.MODEL_NAME = "old-model"
+        result = srv.switch_model("new-model")
+        assert srv.MODEL_NAME == "new-model"
+        assert "new-model" in result
+
+    def test_confirmation_includes_old_name(self, mock_client):
+        srv.MODEL_NAME = "old-model"
+        result = srv.switch_model("new-model")
+        assert "old-model" in result
+
+
+# ---------------------------------------------------------------------------
+# summarize_text — unit tests
+# ---------------------------------------------------------------------------
+
+class TestSummarizeText:
+
+    def test_returns_summary(self, mock_client):
+        mock_client.chat.completions.create.return_value = _mock_response("A short summary.")
+        result = srv.summarize_text("Long text here...")
+        assert result == "A short summary."
+
+    def test_max_words_in_prompt(self, mock_client):
+        mock_client.chat.completions.create.return_value = _mock_response("ok")
+        srv.summarize_text("text", max_words=50)
+        prompt = mock_client.chat.completions.create.call_args.kwargs["messages"][1]["content"]
+        assert "50" in prompt
+
+    def test_focus_included_in_prompt(self, mock_client):
+        mock_client.chat.completions.create.return_value = _mock_response("ok")
+        srv.summarize_text("text", focus="security issues")
+        prompt = mock_client.chat.completions.create.call_args.kwargs["messages"][1]["content"]
+        assert "security issues" in prompt
+
+    def test_exception_returns_error_string(self, mock_client):
+        mock_client.chat.completions.create.side_effect = Exception("timeout")
+        assert srv.summarize_text("text").startswith("Error summarizing text:")
+
+
+# ---------------------------------------------------------------------------
+# generate_commit_message — unit tests
+# ---------------------------------------------------------------------------
+
+class TestGenerateCommitMessage:
+
+    def test_returns_commit_message(self, mock_client):
+        mock_client.chat.completions.create.return_value = _mock_response("feat: add login")
+        result = srv.generate_commit_message("diff --git a/x.py ...")
+        assert result == "feat: add login"
+
+    def test_diff_in_user_prompt(self, mock_client):
+        mock_client.chat.completions.create.return_value = _mock_response("ok")
+        srv.generate_commit_message("my diff content")
+        prompt = mock_client.chat.completions.create.call_args.kwargs["messages"][1]["content"]
+        assert "my diff content" in prompt
+
+    def test_extra_context_included(self, mock_client):
+        mock_client.chat.completions.create.return_value = _mock_response("ok")
+        srv.generate_commit_message("diff", extra_context="fixes #99")
+        prompt = mock_client.chat.completions.create.call_args.kwargs["messages"][1]["content"]
+        assert "fixes #99" in prompt
+
+    def test_exception_returns_error_string(self, mock_client):
+        mock_client.chat.completions.create.side_effect = Exception("err")
+        assert srv.generate_commit_message("diff").startswith("Error generating commit message:")
+
+
+# ---------------------------------------------------------------------------
+# generate_unit_tests — unit tests
+# ---------------------------------------------------------------------------
+
+class TestGenerateUnitTests:
+
+    def test_returns_test_code(self, mock_client):
+        mock_client.chat.completions.create.return_value = _mock_response("def test_foo(): pass")
+        result = srv.generate_unit_tests("def foo(): return 1")
+        assert "test_foo" in result
+
+    def test_framework_in_system_message(self, mock_client):
+        mock_client.chat.completions.create.return_value = _mock_response("ok")
+        srv.generate_unit_tests("code", framework="unittest")
+        sys_msg = mock_client.chat.completions.create.call_args.kwargs["messages"][0]["content"]
+        assert "unittest" in sys_msg
+
+    def test_extra_instructions_in_prompt(self, mock_client):
+        mock_client.chat.completions.create.return_value = _mock_response("ok")
+        srv.generate_unit_tests("code", extra_instructions="cover None input")
+        prompt = mock_client.chat.completions.create.call_args.kwargs["messages"][1]["content"]
+        assert "cover None input" in prompt
+
+    def test_exception_returns_error_string(self, mock_client):
+        mock_client.chat.completions.create.side_effect = Exception("err")
+        assert srv.generate_unit_tests("code").startswith("Error generating unit tests:")
+
+
+# ---------------------------------------------------------------------------
+# explain_code — unit tests
+# ---------------------------------------------------------------------------
+
+class TestExplainCode:
+
+    def test_returns_explanation(self, mock_client):
+        mock_client.chat.completions.create.return_value = _mock_response("It adds two numbers.")
+        result = srv.explain_code("def add(a, b): return a + b")
+        assert result == "It adds two numbers."
+
+    @pytest.mark.parametrize("audience,keyword", [
+        ("beginner", "jargon"),
+        ("developer", "developer"),
+        ("expert", "expert"),
+    ])
+    def test_audience_affects_system_message(self, mock_client, audience, keyword):
+        mock_client.chat.completions.create.return_value = _mock_response("ok")
+        srv.explain_code("code", audience=audience)
+        sys_msg = mock_client.chat.completions.create.call_args.kwargs["messages"][0]["content"].lower()
+        assert keyword in sys_msg
+
+    def test_unknown_audience_falls_back_to_developer(self, mock_client):
+        mock_client.chat.completions.create.return_value = _mock_response("ok")
+        srv.explain_code("code", audience="alien")
+        sys_msg = mock_client.chat.completions.create.call_args.kwargs["messages"][0]["content"].lower()
+        assert "developer" in sys_msg
+
+    def test_exception_returns_error_string(self, mock_client):
+        mock_client.chat.completions.create.side_effect = Exception("err")
+        assert srv.explain_code("code").startswith("Error explaining code:")
+
+
+# ---------------------------------------------------------------------------
+# translate_text — unit tests
+# ---------------------------------------------------------------------------
+
+class TestTranslateText:
+
+    def test_returns_translation(self, mock_client):
+        mock_client.chat.completions.create.return_value = _mock_response("Ahoj světe")
+        result = srv.translate_text("Hello world", "Czech")
+        assert result == "Ahoj světe"
+
+    def test_target_language_in_prompt(self, mock_client):
+        mock_client.chat.completions.create.return_value = _mock_response("ok")
+        srv.translate_text("hello", "German")
+        prompt = mock_client.chat.completions.create.call_args.kwargs["messages"][1]["content"]
+        assert "German" in prompt
+
+    def test_formatting_note_when_preserve_true(self, mock_client):
+        mock_client.chat.completions.create.return_value = _mock_response("ok")
+        srv.translate_text("text", "Czech", preserve_formatting=True)
+        sys_msg = mock_client.chat.completions.create.call_args.kwargs["messages"][0]["content"]
+        assert "markdown" in sys_msg.lower()
+
+    def test_no_formatting_note_when_preserve_false(self, mock_client):
+        mock_client.chat.completions.create.return_value = _mock_response("ok")
+        srv.translate_text("text", "Czech", preserve_formatting=False)
+        sys_msg = mock_client.chat.completions.create.call_args.kwargs["messages"][0]["content"]
+        assert "markdown" not in sys_msg.lower()
+
+    def test_exception_returns_error_string(self, mock_client):
+        mock_client.chat.completions.create.side_effect = Exception("err")
+        assert srv.translate_text("text", "Czech").startswith("Error translating text:")
+
+
+# ---------------------------------------------------------------------------
 # MCP registration smoke test
 # ---------------------------------------------------------------------------
 
 class TestMcpRegistration:
 
-    def test_both_tools_registered(self):
+    def test_all_tools_registered(self):
         tools = asyncio.run(srv.mcp.list_tools())
         names = {t.name for t in tools}
-        assert "query_local_llm" in names
-        assert "query_local_llm_with_context" in names
+        expected = {
+            "query_local_llm",
+            "query_local_llm_with_context",
+            "list_available_models",
+            "switch_model",
+            "summarize_text",
+            "generate_commit_message",
+            "generate_unit_tests",
+            "explain_code",
+            "translate_text",
+        }
+        assert expected == names
 
 
 # ---------------------------------------------------------------------------
@@ -181,8 +381,7 @@ class TestIntegration:
 
     def test_query_local_llm_live(self, live_client):
         result = srv.query_local_llm("Reply with only the word PONG.")
-        assert isinstance(result, str)
-        assert len(result) > 0
+        assert isinstance(result, str) and len(result) > 0
         assert not result.startswith("Error")
 
     def test_query_local_llm_with_context_live(self, live_client):
@@ -191,6 +390,37 @@ class TestIntegration:
             context="def add(a, b):\n    return a + b",
             task_type="code_review",
         )
-        assert isinstance(result, str)
-        assert len(result) > 0
+        assert isinstance(result, str) and len(result) > 0
+        assert not result.startswith("Error")
+
+    def test_list_available_models_live(self, live_client):
+        result = srv.list_available_models()
+        assert "qwen" in result.lower()
+        assert not result.startswith("Error")
+
+    def test_summarize_text_live(self, live_client):
+        result = srv.summarize_text(
+            "Python is a high-level, general-purpose programming language. "
+            "Its design philosophy emphasises code readability. "
+            "It supports multiple programming paradigms.",
+            max_words=30,
+        )
+        assert isinstance(result, str) and len(result) > 0
+        assert not result.startswith("Error")
+
+    def test_generate_commit_message_live(self, live_client):
+        result = srv.generate_commit_message(
+            "diff --git a/server.py b/server.py\n+def new_tool(): pass"
+        )
+        assert isinstance(result, str) and len(result) > 0
+        assert not result.startswith("Error")
+
+    def test_explain_code_live(self, live_client):
+        result = srv.explain_code("def fib(n): return n if n < 2 else fib(n-1) + fib(n-2)")
+        assert isinstance(result, str) and len(result) > 0
+        assert not result.startswith("Error")
+
+    def test_translate_text_live(self, live_client):
+        result = srv.translate_text("Hello, how are you?", "Czech")
+        assert isinstance(result, str) and len(result) > 0
         assert not result.startswith("Error")

@@ -100,6 +100,66 @@ Send a prompt with additional context (e.g. a code snippet).
 | `task_type` | `str` | `general` | `code_review`, `documentation`, `refactor`, `general` |
 | `system_message` | `str` | auto | Override system message |
 
+### `list_available_models`
+
+List all models installed in the local Ollama / LM Studio instance. No parameters.
+
+### `switch_model`
+
+Switch the active model for all subsequent calls in the current session.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `model_name` | `str` | Model identifier (e.g. `qwen2.5-coder:7b-16k`) |
+
+### `summarize_text`
+
+Produce a concise summary of a long text to save tokens on large file contexts.
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `text` | `str` | required | Text to summarize |
+| `max_words` | `int` | `150` | Target summary length |
+| `focus` | `str` | `""` | Aspect to emphasise (e.g. `"security issues"`) |
+
+### `generate_commit_message`
+
+Generate a Conventional Commits message from a `git diff` output.
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `diff` | `str` | required | Output of `git diff --staged` |
+| `extra_context` | `str` | `""` | Motivation or ticket reference |
+
+### `generate_unit_tests`
+
+Generate boilerplate unit tests for a given code snippet.
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `code` | `str` | required | Source code to test |
+| `framework` | `str` | `pytest` | Test framework (`unittest`, `jest`, `go test`, …) |
+| `extra_instructions` | `str` | `""` | Additional guidance |
+
+### `explain_code`
+
+Explain what a piece of code does in plain language.
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `code` | `str` | required | Code to explain |
+| `audience` | `str` | `developer` | `beginner`, `developer`, or `expert` |
+
+### `translate_text`
+
+Translate text to another language, preserving markdown and code-block structure.
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `text` | `str` | required | Text to translate |
+| `target_language` | `str` | required | Language name (e.g. `Czech`, `German`) |
+| `preserve_formatting` | `bool` | `True` | Keep markdown structure intact |
+
 ## Example
 
 <img width="1433" alt="cc-token_saver" src="https://github.com/user-attachments/assets/1e22553e-82bc-49c8-8ccd-5bd8b0306605" />
