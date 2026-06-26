@@ -4,11 +4,14 @@ Reduce your Claude Code token usage by delegating simple tasks to a local LLM.
 
 The MCP server exposes your local LLM as tools that Claude Code can call for:
 
-- Code snippet generation
-- Simple refactoring
-- Documentation writing
-- Code reviews
-- Basic Q&A
+- Code snippet generation and simple refactoring
+- Unit test generation (pytest, unittest, jest, and more)
+- Code explanation at beginner, developer, or expert level
+- Documentation writing and code reviews
+- Summarizing long texts, logs, and READMEs
+- Generating Conventional Commits messages from diffs
+- Text translation with markdown formatting preserved
+- Listing and switching between locally available models
 
 Claude Code routes simple, self-contained subtasks to the local LLM first,
 only spending premium tokens on complex reasoning and multi-step workflows.
