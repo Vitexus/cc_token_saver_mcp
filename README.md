@@ -163,7 +163,29 @@ Translate text to another language, preserving markdown and code-block structure
 | `target_language` | `str` | required | Language name (e.g. `Czech`, `German`) |
 | `preserve_formatting` | `bool` | `True` | Keep markdown structure intact |
 
-## Example
+## CLAUDE.md Integration
+
+You can instruct Claude Code to **automatically** delegate commit message generation to the local LLM by adding a rule to `~/.claude/CLAUDE.md`:
+
+```markdown
+## Commit Message Generation
+
+When creating a git commit, ALWAYS generate the commit message via the local LLM — never write it manually:
+
+1. Run `git diff --staged` to get the staged diff.
+2. Call `mcp__cc-token-saver__generate_commit_message` with that diff (and an `extra_context` string if there is a ticket number or motivation).
+3. Use the returned message verbatim in `git commit -m "..."`.
+
+This applies to every commit in every project.
+```
+
+With this rule in place, simply say **"commit this"** — Claude Code calls `cc-token-saver`, generates a Conventional Commits message from the staged diff, and commits without spending premium tokens on message writing.
+
+![Commit workflow: Claude Code calls cc-token-saver and commits with a locally generated message](commited.png)
+
+The screenshot above shows the full flow: Claude Code ran `git diff --staged`, called `cc-token-saver`, ran two shell commands, and produced the commit — all triggered by a single "commit this" instruction.
+
+## Examples
 
 <img width="1433" alt="cc-token_saver" src="https://github.com/user-attachments/assets/1e22553e-82bc-49c8-8ccd-5bd8b0306605" />
 
