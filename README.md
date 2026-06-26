@@ -79,6 +79,27 @@ If running from source, point to `server.py` instead:
 }
 ```
 
+### Real-world example (Ollama + Debian package)
+
+```json
+"mcpServers": {
+  "cc-token-saver": {
+    "type": "stdio",
+    "command": "/usr/bin/cc-token-saver-mcp",
+    "args": [],
+    "env": {
+      "OPENAI_API_KEY": "none",
+      "OPENAI_BASE_URL": "http://localhost:11434/v1",
+      "LOCAL_MODEL_NAME": "qwen2.5-coder:7b",
+      "LOCAL_LLM_TEMPERATURE": "0.7",
+      "LOCAL_LLM_MAX_TOKENS": "-1"
+    }
+  }
+}
+```
+
+This snippet comes from a real `~/.claude.json` running the Debian package against a local [Ollama](https://ollama.com) instance (`ollama pull qwen2.5-coder:7b`). LM Studio users only need to change `OPENAI_BASE_URL` to `http://localhost:1234/v1`.
+
 ## Tools
 
 ### `query_local_llm`
@@ -184,6 +205,39 @@ With this rule in place, simply say **"commit this"** — Claude Code calls `cc-
 ![Commit workflow: Claude Code calls cc-token-saver and commits with a locally generated message](commited.png)
 
 The screenshot above shows the full flow: Claude Code ran `git diff --staged`, called `cc-token-saver`, ran two shell commands, and produced the commit — all triggered by a single "commit this" instruction.
+
+## Estimated Savings
+
+Prices based on **Claude Sonnet 4.6** ($3/MTok input, $15/MTok output) — the default Claude Code model.
+
+### Direct savings per day (moderate developer, ~5 h active)
+
+| Task offloaded to local LLM | Times/day | Output tokens saved | Saving/day |
+|-----------------------------|-----------|---------------------|-----------|
+| Commit messages | 8 | ~100 tok | $0.012 |
+| Code explanations | 5 | ~450 tok | $0.034 |
+| Unit test generation | 3 | ~750 tok | $0.034 |
+| Quick snippets / one-liners | 10 | ~350 tok | $0.053 |
+| Text summarisation | 2 | ~150 tok | $0.005 |
+| **Total** | **~28** | **~10 700 tok/day** | **~$0.14** |
+
+### Indirect savings — context bloat
+
+Every token Claude generates is added to the conversation history and re-sent as input on every subsequent turn. Offloading ~10 000 tokens/day across a 20-turn session avoids re-sending them repeatedly:
+
+```
+10 000 tok × 20 turns × $3/MTok ≈ $0.60/day
+```
+
+### Monthly totals (22 working days)
+
+| Profile | Active hrs/day | Tokens saved/month | $/month |
+|---------|---------------|--------------------|---------|
+| Light (2–3 h) | 2–3 | ~200 K output + 1 M input | **$3–8** |
+| Moderate (5–6 h) | 5–6 | ~500 K output + 3 M input | **$10–20** |
+| Heavy (8+ h) | 8+ | ~1 M output + 6 M input | **$20–40** |
+
+> **Biggest single win:** commit message generation via CLAUDE.md — fully automatic, zero extra effort, adds up to ~40 free commits per week.
 
 ## Examples
 
