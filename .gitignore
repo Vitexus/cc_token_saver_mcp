@@ -6,3 +6,12 @@ __pycache__/
 build/
 dist/
 .pybuild/
+
+debian/.debhelper/
+debian/debhelper-build-stamp
+debian/files
+debian/python3-cc-token-saver-mcp.postinst.debhelper
+debian/python3-cc-token-saver-mcp.prerm.debhelper
+debian/python3-cc-token-saver-mcp.substvars
+debian/python3-cc-token-saver-mcp/
+

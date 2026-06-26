@@ -14,11 +14,14 @@
     </p>
     <p>Tasks the local LLM can handle include:</p>
     <ul>
-      <li>Code snippet generation</li>
-      <li>Simple refactoring tasks</li>
-      <li>Documentation writing</li>
-      <li>Code reviews</li>
-      <li>Basic question and answer</li>
+      <li>Code snippet generation and simple refactoring</li>
+      <li>Unit test generation (pytest, unittest, jest, and more)</li>
+      <li>Code explanation at beginner, developer, or expert level</li>
+      <li>Documentation writing and code reviews</li>
+      <li>Summarizing long texts, logs, and READMEs</li>
+      <li>Generating conventional git commit messages from diffs</li>
+      <li>Text translation with markdown formatting preserved</li>
+      <li>Listing and switching between locally available models</li>
     </ul>
     <p>
       The server connects to any OpenAI-compatible API endpoint, making it compatible
@@ -27,6 +30,7 @@
       via command-line flags, environment variables, or a <code>.env</code> file.
     </p>
   </description>
+  <icon type="stock">cz.vitexsoftware.cc-token-saver-mcp</icon>
   <provides>
     <binary>cc-token-saver-mcp</binary>
   </provides>

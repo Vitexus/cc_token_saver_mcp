@@ -140,14 +140,47 @@ Accepts an optional system message, temperature override, and max-tokens
 override.
 .TP
 .B query_local_llm_with_context
-Send a prompt together with additional context (e.g. a code snippet) to
-the local LLM.
+Send a prompt together with additional context (e.g. a code snippet).
 Supports built-in system-message presets for
 .IR code_review ,
 .IR documentation ,
 .IR refactor ,
 and
 .IR general .
+.TP
+.B list_available_models
+Return all model IDs available at the configured local endpoint.
+Call this before
+.B switch_model
+to discover valid names.
+.TP
+.B switch_model
+Switch the active model for all subsequent tool calls in the current session.
+.TP
+.B summarize_text
+Summarize a long text or document.
+Accepts a target word count and an optional focus aspect.
+.TP
+.B generate_commit_message
+Generate a Conventional Commits-style git commit message from a
+.B git diff
+output.
+.TP
+.B generate_unit_tests
+Generate unit tests for a code snippet.
+Supports pytest, unittest, jest, go test, and other frameworks.
+.TP
+.B explain_code
+Explain a code snippet in plain language.
+Audience levels:
+.IR beginner ,
+.IR developer
+(default), and
+.IR expert .
+.TP
+.B translate_text
+Translate text to a target language while preserving markdown and
+code-block formatting.
 .SH EXAMPLES
 Show help and exit:
 .PP
