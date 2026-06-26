@@ -23,7 +23,8 @@
     <p>
       The server connects to any OpenAI-compatible API endpoint, making it compatible
       with local inference servers such as LM Studio, Ollama, or llama.cpp.
-      Configuration is done via environment variables or a <code>.env</code> file.
+      It supports stdio (default), HTTP, and SSE transports. Configuration is done
+      via command-line flags, environment variables, or a <code>.env</code> file.
     </p>
   </description>
   <provides>
@@ -36,6 +37,6 @@
   </developer>
   <content_rating type="oars-1.1"/>
   <releases>
-    <release version="1.0.0" date="2026-06-25"/>
+    <release version="1.0.0" date="2026-06-26"/>
   </releases>
 </component>

@@ -1,11 +1,22 @@
-.TH CC\-TOKEN\-SAVER\-MCP 1 "2026-06-25" "1.0.0" "CC Token Saver MCP"
+.TH CC\-TOKEN\-SAVER\-MCP 1 "2026-06-26" "1.0.0" "CC Token Saver MCP"
 .SH NAME
 cc\-token\-saver\-mcp \- MCP server that delegates simple tasks to a local LLM
 .SH SYNOPSIS
 .B cc\-token\-saver\-mcp
+[\fB\-h\fR]
+[\fB\-V\fR]
+[\fB\-t\fR \fIMODE\fR]
+[\fB\-\-host\fR \fIHOST\fR]
+[\fB\-p\fR \fIPORT\fR]
+[\fB\-m\fR \fINAME\fR]
+[\fB\-\-base\-url\fR \fIURL\fR]
+[\fB\-\-api\-key\fR \fIKEY\fR]
+[\fB\-\-temperature\fR \fIFLOAT\fR]
+[\fB\-\-max\-tokens\fR \fIN\fR]
+[\fB\-\-no\-banner\fR]
 .SH DESCRIPTION
 .B cc\-token\-saver\-mcp
-starts an MCP (Model Context Protocol) server that exposes a locally running
+starts a Model Context Protocol (MCP) server that exposes a locally running
 LLM as tools for Claude Code to use.
 By routing simple, well-defined subtasks to the local LLM, it reduces the
 number of tokens consumed by Claude Code on repetitive or low-complexity
@@ -13,7 +24,86 @@ operations.
 .PP
 The server reads its configuration from a
 .I .env
-file in the working directory, or from environment variables directly.
+file in the working directory, or from environment variables.
+Any value set via a command-line flag takes precedence over both.
+.SH OPTIONS
+.TP
+.BR \-h ", " \-\-help
+Show a help message and exit.
+.TP
+.BR \-V ", " \-\-version
+Show the program version and exit.
+.TP
+.BI \-t " MODE" ", \-\-transport " MODE
+Transport protocol to use.
+Valid values:
+.RS
+.TP
+.B stdio
+Standard I/O (default).
+Used by Claude Code and most MCP clients.
+.TP
+.B http
+HTTP server.
+Requires
+.B \-\-host
+and
+.B \-\-port
+to be set if non-default values are needed.
+.TP
+.B sse
+Server-Sent Events (legacy; prefer
+.BR http ).
+.RE
+.TP
+.BI \-\-host " HOST"
+Hostname or IP address to bind for
+.B http
+or
+.B sse
+transport (default:
+.IR 127.0.0.1 ).
+.TP
+.BI \-p " PORT" ", \-\-port " PORT
+TCP port for
+.B http
+or
+.B sse
+transport (default:
+.IR 8000 ).
+.TP
+.BI \-m " NAME" ", \-\-model " NAME
+Local model name to request from the endpoint.
+Overrides the
+.B LOCAL_MODEL_NAME
+environment variable.
+.TP
+.BI \-\-base\-url " URL"
+Base URL of the OpenAI-compatible local API.
+Overrides
+.BR OPENAI_BASE_URL .
+.TP
+.BI \-\-api\-key " KEY"
+API key sent to the local endpoint.
+Overrides
+.BR OPENAI_API_KEY .
+.TP
+.BI \-\-temperature " FLOAT"
+Sampling temperature in the range 0.0\(en2.0.
+Overrides
+.BR LOCAL_LLM_TEMPERATURE .
+.TP
+.BI \-\-max\-tokens " N"
+Maximum tokens per response.
+Use
+.B \-1
+for no limit.
+Overrides
+.BR LOCAL_LLM_MAX_TOKENS .
+.TP
+.B \-\-no\-banner
+Suppress the FastMCP startup banner.
+Useful when running inside scripts or CI.
 .SH ENVIRONMENT
 .TP
 .B OPENAI_API_KEY
@@ -41,6 +131,7 @@ Maximum tokens per response; \-1 means no limit (default:
 .TP
 .I .env
 Optional dotenv file loaded from the working directory at startup.
+Command-line flags override values from this file.
 .SH TOOLS EXPOSED
 .TP
 .B query_local_llm
@@ -58,7 +149,15 @@ Supports built-in system-message presets for
 and
 .IR general .
 .SH EXAMPLES
-Start the server with default settings (requires a local LLM at port 1234):
+Show help and exit:
+.PP
+.RS 4
+.EX
+cc\-token\-saver\-mcp \-\-help
+.EE
+.RE
+.PP
+Start with default settings (local LLM at port 1234):
 .PP
 .RS 4
 .EX
@@ -66,11 +165,19 @@ cc\-token\-saver\-mcp
 .EE
 .RE
 .PP
-Override the model and endpoint via environment:
+Override the model and endpoint:
 .PP
 .RS 4
 .EX
-OPENAI_BASE_URL=http://localhost:8080/v1 LOCAL_MODEL_NAME=llama3 cc\-token\-saver\-mcp
+cc\-token\-saver\-mcp \-\-base\-url http://localhost:8080/v1 \-\-model llama3
+.EE
+.RE
+.PP
+Start as an HTTP server on all interfaces at port 9000:
+.PP
+.RS 4
+.EX
+cc\-token\-saver\-mcp \-\-transport http \-\-host 0.0.0.0 \-\-port 9000
 .EE
 .RE
 .PP
